@@ -1,0 +1,155 @@
+package Logic;
+
+import java.util.ArrayList;
+
+import staticValues.Colour;
+import staticValues.Piece;
+import staticValues.PieceType;
+
+public class Movegenerator {
+
+	private Gamestate currentGamestate;
+	private ArrayList<Move> moves;
+
+	public Movegenerator(Gamestate currentGamestate) {
+		this.currentGamestate = currentGamestate;
+		moves = new ArrayList<Move>();
+	}
+
+	public ArrayList<Move> generateMoves(){
+
+		for(int i = 0; i < 8; i++) {
+			for(int j = 0; j < 8; j++) {
+				System.out.println("i=" + i + " j=" + j + " PieceType=" + currentGamestate.getBoard()[i][j].getType() + " PieceColour=" + currentGamestate.getBoard()[i][j].getColour());
+				System.out.println("moves.size()=" + moves.size());
+				if(currentGamestate.getBoard()[i][j].getType() != PieceType.EMPTY && 
+						currentGamestate.getBoard()[i][j].getColour() == currentGamestate.getTurnColour()) {
+
+					switch(currentGamestate.getBoard()[i][j].getType()) {		//TODO make individual movegeneration
+					case PAWN:
+						pawnMoves(currentGamestate, i, j, currentGamestate.getTurnColour());
+						break;
+					case KNIGHT:
+						staticMoves(currentGamestate, i, j, 2, 1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 1, 2, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, -1, 2, currentGamestate.getTurnColour());	
+						staticMoves(currentGamestate, i, j, -2, 1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, -2, -1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, -1, -2, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 1, -2, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 2, -1, currentGamestate.getTurnColour());
+						break;
+					case BISHOP:
+						coverDirection(currentGamestate, i, j, i, j, 1, 1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, -1, 1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 1, -1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, -1, -1, currentGamestate.getTurnColour());
+						break;
+					case ROOK:
+						coverDirection(currentGamestate, i, j, i, j, 0, 1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 1, 0, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 0, -1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, -1, 0, currentGamestate.getTurnColour());
+						break;
+					case QUEEN:
+						coverDirection(currentGamestate, i, j, i, j, 1, 1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, -1, 1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 1, -1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, -1, -1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 0, 1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 1, 0, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, 0, -1, currentGamestate.getTurnColour());
+						coverDirection(currentGamestate, i, j, i, j, -1, 0, currentGamestate.getTurnColour());
+						break;
+					case KING:
+						staticMoves(currentGamestate, i, j, 1, 1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, -1, 1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 1, -1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, -1, -1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 0, 1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 1, 0, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, 0, -1, currentGamestate.getTurnColour());
+						staticMoves(currentGamestate, i, j, -1, 0, currentGamestate.getTurnColour());
+						break;
+					case EMPTY: 
+						break;
+					default: System.err.println("Invalid PieceType");
+					}
+				}
+			}
+		}
+		//TODO implement castling
+		return moves;
+	}
+
+	//method used for knight and king moves
+	private void staticMoves(Gamestate currentGamestate, int startY, int startX, int dirY, int dirX, Colour playerColour) {
+		if(currentGamestate.getBoard()[startY+dirY][startX+dirX].getColour() != playerColour) {
+			moves.add(new Move(startY, startX, startY+dirY, startX+dirX, currentGamestate.getBoard()));
+		}
+	}
+	
+	private void pawnMoves(Gamestate currentGamestate, int startY, int startX, Colour playerColour) {
+		int direction = 0;
+		if(playerColour.equals(Colour.BLACK)) {
+			direction = 1;
+			
+			//Special move from starting position
+			if(startX == 1 &&
+				currentGamestate.getBoard()[startX+1][startY].getColour() == Colour.NONE &&
+				currentGamestate.getBoard()[startX+2][startY].getColour() == Colour.NONE) {
+				moves.add(new Move(startY, startX, startY, startX+2, currentGamestate.getBoard()));
+			}
+			//Diagonal captures
+			if(startY+1 < 8 && currentGamestate.getBoard()[startY+1][startX+direction].getColour() == Colour.WHITE) {
+				moves.add(new Move(startY, startX, startY+1, startX+direction, currentGamestate.getBoard()));
+			}
+			if(startY-1 >= 0 && currentGamestate.getBoard()[startY-1][startX+direction].getColour() == Colour.WHITE) {
+				moves.add(new Move(startY, startX, startY-1, startX+direction, currentGamestate.getBoard()));
+			}
+		} else if(playerColour.equals(Colour.WHITE)) {
+			direction = -1;
+			
+			//Special move from starting position
+			if(startX == 6 &&
+					currentGamestate.getBoard()[startX-1][startY].getColour() == Colour.NONE &&
+					currentGamestate.getBoard()[startX-2][startY].getColour() == Colour.NONE) {
+					moves.add(new Move(startY, startX, startY, startX-2, currentGamestate.getBoard()));
+				}
+			//Diagonal captures
+			System.out.println("startY=" + startY + " startX=" + startX + " direction=" + direction + " playerColour=" + playerColour);
+			System.out.println("startY+1=" + (startY+1));
+			if(startX+1 < 8 && 
+					currentGamestate.getBoard()[startY+direction][startX+1].getColour() == Colour.BLACK) {
+				moves.add(new Move(startY, startX, startY+direction, startX+1, currentGamestate.getBoard()));
+			}
+			if(startX-1 >= 0 && currentGamestate.getBoard()[startY+direction][startX-1].getColour() == Colour.BLACK) {
+				moves.add(new Move(startY, startX, startY+direction, startX-1, currentGamestate.getBoard()));
+			}
+		} else {
+			System.err.println("playerColour not black/white in class Movegenerator");
+		}
+		//One move forward
+		if(currentGamestate.getBoard()[startY+direction][startX].getColour() == Colour.NONE) {
+			moves.add(new Move(startY, startX, startY+direction, startX, currentGamestate.getBoard()));
+		}
+	}
+	
+	//method used to cover directions for bishops, rooks and queens
+	private void coverDirection(Gamestate currentGamestate, int startY, int startX, int nextY, int nextX, int dirY, int dirX, Colour playerColour) {
+		if(nextY+dirY < 8 && nextY+dirY >= 0 && nextX+dirX < 8 && nextX+dirX >= 0 &&
+				currentGamestate.getBoard()[nextY+dirY][nextX+dirX].getType() == PieceType.EMPTY) {
+			Gamestate tempGamestate = currentGamestate;
+			tempGamestate.movePiece(startY, startX, nextY+dirY, nextX+dirX);
+			moves.add(new Move(startY, startX, nextY+dirY, nextX+dirX, currentGamestate.getBoard()));
+			coverDirection(currentGamestate, startY, startX, nextY+dirY, nextX+dirX, dirY, dirX, playerColour);
+			
+		} else if(nextY+dirY < 8 && nextY+dirY >= 0 && nextX+dirX < 8 && nextX+dirX >= 0 &&
+				currentGamestate.getBoard()[nextY+dirY][nextX+dirX].getType() != currentGamestate.getBoard()[nextY][nextX].getType()) {
+			Gamestate tempGamestate = currentGamestate;
+			tempGamestate.movePiece(startY, startX, nextY+dirY, nextX+dirX);
+			moves.add(new Move(startY, startX, nextY+dirY, nextX+dirX, currentGamestate.getBoard()));
+		}
+	}
+	
+}
